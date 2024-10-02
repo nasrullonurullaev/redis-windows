@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <Wix xmlns="http://wixtoolset.org/schemas/v4/wxs">
-  <Package Name="Redis"
+  <Package Name="Redis-Windows"
            Manufacturer="Ascensio System SIA"
            Version="7.4.0"
            UpgradeCode="05410198-7212-4FC4-B7C8-AFEFC3DA0FBC"
