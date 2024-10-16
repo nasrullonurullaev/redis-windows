@@ -104,7 +104,6 @@ jobs:
           token: ${{ secrets.GITHUB_TOKEN }}
           name: Redis ${{ env.RELEASE_VERSION }} for Windows
           tag_name: ${{ env.RELEASE_VERSION }}
-          body_path: redis_latest_body.txt
           make_latest: ${{ inputs.make_latest }}
           prerelease: ${{ inputs.prerelease }}
           files: |
