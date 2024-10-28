@@ -6,6 +6,11 @@ on:
       - '*'   
   workflow_dispatch:
     inputs:
+      tag_name:
+        description: 'Version'
+        required: true
+        default: "${{ github.ref_name }}"
+        type: string 
       make_latest:
         description: 'Latest'
         default: false
