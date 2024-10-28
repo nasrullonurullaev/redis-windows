@@ -2,10 +2,8 @@ name: Build Redis DIY
 
 on:
   push:
-    branches:
-      - 'main'
     tags:
-      - 'v*'   
+      - '*'   
   workflow_dispatch:
     inputs:
       tag_name:
