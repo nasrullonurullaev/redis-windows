@@ -1,91 +1,109 @@
-name: Cron Build Valkey (MSYS2)
+name: Build Redis DIY
 
 on:
-  schedule:
-    - cron: '0 1 * * *'
-
+  push:
+    tags:
+      - '*'
+  workflow_dispatch:
+    inputs:
+      tag_name:
+        description: 'Version'
+        required: true
+        default: "6.2.13"
+        type: string
+      make_latest:
+        description: 'Latest'
+        default: false
+        type: boolean
+      prerelease:
+        description: 'Pre-release'
+        default: false
+        type: boolean
+        
 jobs:
   build:
     runs-on: windows-latest
 
     steps:
       - uses: actions/checkout@v4
-
       - name: Download source code
         run: |
-          if ( -not ( Test-Path -Path .github\valkey_latest_version.txt )) { 
-            Add-Content -Path .github\valkey_latest_version.txt -Value "" -NoNewline
-          }
-          $res = ConvertFrom-Json(Invoke-WebRequest -Headers @{'Authorization' = 'token ${{ secrets.GITHUB_TOKEN }}'} -Uri "https://api.github.com/repos/valkey-io/valkey/releases/latest").Content
-          if ( $res.tag_name -eq ( Get-Content .github\valkey_latest_version.txt )) { 
-            Write-Output "No new version"
-            exit 1
-          }
-          $res.tag_name | Out-File -FilePath .github\valkey_latest_version.txt -NoNewline -Encoding ascii
-          $res.body | Set-Content .\valkey_latest_body.txt
-          Add-Content -Path $env:GITHUB_ENV -Value "RELEASE_VERSION=$($res.tag_name)"
-          Add-Content -Path $env:GITHUB_ENV -Value "VALKEY_DIST=Valkey-$($res.tag_name)-Windows-x64"
-          Invoke-WebRequest -Uri https://github.com/valkey-io/valkey/archive/refs/tags/$($res.tag_name).tar.gz -OutFile valkey-$($res.tag_name).tar.gz
+          $tag_name="${{ github.ref_name }}"
+          (ConvertFrom-Json(Invoke-WebRequest -Headers @{'Authorization' = 'Bearer ${{ secrets.GITHUB_TOKEN }}'} -Uri "https://api.github.com/repos/redis/redis/releases/tags/$($tag_name.Trim())").Content).body -Replace '\#1', 'https://github.com/redis/redis/pull/1' | Set-Content .\redis_latest_body.txt
+          Invoke-WebRequest -Uri https://github.com/redis/redis/archive/refs/tags/$($tag_name.Trim()).tar.gz -OutFile redis-$($tag_name.Trim()).tar.gz
+          Add-Content -Path $env:GITHUB_ENV -Value "RELEASE_VERSION=$($tag_name.Trim())"
+          Add-Content -Path $env:GITHUB_ENV -Value "REDIS_DIST=Redis-$($tag_name.Trim())-Windows-x64"
 
-      - uses: msys2/setup-msys2@v2
+      - name: Setup dotnet
+        if: ${{ success() }}
+        uses: actions/setup-dotnet@v4
+      - run: |
+          dotnet publish -c Release -r win-x64 --sc
+
+      - uses: cygwin/cygwin-install-action@master
         with:
-          update: true
-          install: gcc make pkg-config libopenssl openssl-devel zip
+          packages: make gcc-core pkg-config libssl-devel zip
+      - name: cygwin Build Redis
+        env:
+          CYGWIN_NOWINPATH: 1
+        if: ${{ success() }}
+        run: >-
+          workspace=$(pwd) ;
+          mkdir ${{ env.REDIS_DIST }}-cygwin ;
+          sed -i 's/__GNU_VISIBLE/1/' /usr/include/dlfcn.h ;
+          rm -rf redis-${{ env.RELEASE_VERSION }} && tar -xzf redis-${{ env.RELEASE_VERSION }}.tar.gz ;
+          cd redis-${{ env.RELEASE_VERSION }}/src && ./mkreleasehdr.sh ;
+          sed -i 's/\"\;/\"/' asciilogo.h ;
+          echo '" Redis for Windows Project Home \n"' >> asciilogo.h ;
+          echo '" https://github.com/redis-windows/redis-windows  \n\n";' >> asciilogo.h ;
+          cd .. ;
+          make BUILD_TLS=yes CFLAGS="-Wno-char-subscripts -O0" ;
+          find . -mindepth 1 -maxdepth 2 -type f -regex '.*\(\.exe\|\.conf\)' -exec cp -f "{}" "$workspace/${{ env.REDIS_DIST }}-cygwin" \; ;
+          cd $workspace ;
+          cp README.md README.zh_CN.md start.bat /bin/cygcrypto-3.dll /bin/cygwin1.dll /bin/cygssl-3.dll /bin/cygz.dll ${{ env.REDIS_DIST }}-cygwin ;
+          sed -i 's/pidfile \/var\/run/pidfile ./' ${{ env.REDIS_DIST }}-cygwin/redis.conf ;
+          zip -q -r ${{ env.REDIS_DIST }}-cygwin.zip ${{ env.REDIS_DIST }}-cygwin ;
+          cp install_redis_service.bat uninstall_redis_service.bat LICENSE Redis.wxs publish/* ${{ env.REDIS_DIST }}-cygwin/ ;
+          mv ${{ env.REDIS_DIST }}-cygwin ${{ env.REDIS_DIST }}-cygwin-with-Service ;
+          zip -q -r ${{ env.REDIS_DIST }}-cygwin-with-Service.zip ${{ env.REDIS_DIST }}-cygwin-with-Service
+        shell: bash
 
-      - name: Build Valkey with MSYS2
+      - name: Verify cygwin version
         if: ${{ success() }}
         run: |
-          workspace=$(pwd)
-          mkdir ${{ env.VALKEY_DIST }}-msys2
-          sed -i 's/__GNU_VISIBLE/1/' /usr/include/dlfcn.h
-          tar -xzf valkey-${{ env.RELEASE_VERSION }}.tar.gz
-          cd valkey-${{ env.RELEASE_VERSION }}/src && ./mkreleasehdr.sh
-          cd ..
-          make BUILD_TLS=yes CFLAGS="-Wno-char-subscripts -O0"
-          find . -mindepth 1 -maxdepth 2 -type f -regex '.*\(\.exe\|\.conf\)' -exec cp -f "{}" "$workspace/${{ env.VALKEY_DIST }}-msys2" \;
-          cd $workspace
-          cp README.md /usr/bin/msys-2.0.dll /usr/bin/msys-crypto-3.dll /usr/bin/msys-ssl-3.dll ${{ env.VALKEY_DIST }}-msys2
-          sed -i 's/pidfile \/var\/run/pidfile ./' ${{ env.VALKEY_DIST }}-msys2/valkey.conf || true
-          zip -q -r ${{ env.VALKEY_DIST }}-msys2.zip ${{ env.VALKEY_DIST }}-msys2
-        shell: msys2 {0}
+          $REDIS_CYGWIN_VERSION_INFO=(./${{ env.REDIS_DIST }}-cygwin-with-Service/redis-server.exe --version )
+          echo $REDIS_CYGWIN_VERSION_INFO
+          # If ( -not ( $REDIS_CYGWIN_VERSION_INFO -match "${{ env.RELEASE_VERSION }}" ) ) { 
+          #   Write-Output "cygwin verification failed"
+          #   exit 1
+          # }
 
-      - name: Verify version
+      - name: Calculate the hash value
         if: ${{ success() }}
         run: |
-          if ( -not ( (./${{ env.VALKEY_DIST }}-msys2/valkey-server.exe --version ) -match "${{ env.RELEASE_VERSION }}" ) ) { 
-            Write-Output "msys2 verification failed"
-            exit 1
-          }
-
-      - name: Calculate hash
-        if: ${{ success() }}
-        run: |
-          'Hashes' | Out-File -Append .\valkey_latest_body.txt
-          '=========' | Out-File -Append .\valkey_latest_body.txt
-          Get-FileHash .\${{ env.VALKEY_DIST }}-msys2.zip | Format-List | Out-File -Append .\valkey_latest_body.txt
+          'Hashes' | Out-File -Append .\redis_latest_body.txt
+          '=========' | Out-File -Append .\redis_latest_body.txt          
+          Get-FileHash .\${{ env.REDIS_DIST }}-cygwin.zip | Format-List
+          Get-FileHash .\${{ env.REDIS_DIST }}-cygwin.zip | Format-List | Out-File -Append .\redis_latest_body.txt
+          Get-FileHash .\${{ env.REDIS_DIST }}-cygwin-with-Service.zip | Format-List
+          Get-FileHash .\${{ env.REDIS_DIST }}-cygwin-with-Service.zip | Format-List | Out-File -Append .\redis_latest_body.txt
 
       - name: Add from workflow
         if: ${{ success() }}
         run: |
-          "From workflow: https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}" | Out-File -Append .\valkey_latest_body.txt
-
-      - name: Update valkey_latest_version.txt
-        if: ${{ success() }}
-        run: |
-          git config user.name github-actions
-          git config user.email github-actions@github.com
-          git add .github\valkey_latest_version.txt
-          git commit -m "update valkey latest version"
-          git push
-
+          "From workflow: https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}" | Out-File -Append .\redis_latest_body.txt
+        
       - name: Release
         if: ${{ success() }}
         uses: softprops/action-gh-release@v2
         with:
           token: ${{ secrets.GITHUB_TOKEN }}
-          name: Valkey ${{ env.RELEASE_VERSION }} for Windows
+          name: Redis ${{ env.RELEASE_VERSION }} for Windows
           tag_name: ${{ env.RELEASE_VERSION }}
-          body_path: valkey_latest_body.txt
-          make_latest: true
+          body_path: redis_latest_body.txt
+          make_latest: ${{ inputs.make_latest }}
+          prerelease: ${{ inputs.prerelease }}
           files: |
-            ${{ env.VALKEY_DIST }}-msys2.zip
+            ${{ env.REDIS_DIST }}-cygwin.zip
+            ${{ env.REDIS_DIST }}-cygwin-with-Service.zip
+            ${{ env.REDIS_DIST }}.msi
