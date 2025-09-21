@@ -44,7 +44,7 @@ jobs:
       - uses: cygwin/cygwin-install-action@master
         with:
           packages: make gcc-core pkg-config libssl-devel zip
-      - name: cygwin Build Redis
+      - name: cygwin Build Valkey
         env:
           CYGWIN_NOWINPATH: 1
         if: ${{ success() }}
@@ -52,15 +52,15 @@ jobs:
           workspace=$(pwd) ;
           mkdir ${{ env.REDIS_DIST }}-cygwin ;
           sed -i 's/__GNU_VISIBLE/1/' /usr/include/dlfcn.h ;
-          rm -rf redis-${{ env.RELEASE_VERSION }} && tar -xzf redis-${{ env.RELEASE_VERSION }}.tar.gz ;
+          rm -rf valkey-${{ env.RELEASE_VERSION }} && tar -xzf valkey-${{ env.RELEASE_VERSION }}.tar.gz ;
           echo "=== after extract ===" ;
           ls -la ;
-          ls -la redis-${{ env.RELEASE_VERSION }} || true ;
-          cd redis-${{ env.RELEASE_VERSION }}/src && pwd && ls -la ;
+          ls -la valkey-${{ env.RELEASE_VERSION }} || true ;
+          cd valkey-${{ env.RELEASE_VERSION }}/src && pwd && ls -la ;
           ./mkreleasehdr.sh ;
           sed -i 's/\"\;/\"/' asciilogo.h ;
-          echo '" Redis for Windows Project Home \n"' >> asciilogo.h ;
-          echo '" https://github.com/redis-windows/redis-windows  \n\n";' >> asciilogo.h ;
+          echo '" Valkey for Windows Project Home \n"' >> asciilogo.h ;
+          echo '" https://github.com/valkey-io/valkey  \n\n";' >> asciilogo.h ;
           cd .. ;
           make BUILD_TLS=yes CFLAGS="-Wno-char-subscripts -O0" ;
           find . -mindepth 1 -maxdepth 2 -type f -regex '.*\(\.exe\|\.conf\)' -exec cp -f "{}" "$workspace/${{ env.REDIS_DIST }}-cygwin" \; ;
@@ -71,7 +71,6 @@ jobs:
           cp install_redis_service.bat uninstall_redis_service.bat LICENSE Redis.wxs publish/* ${{ env.REDIS_DIST }}-cygwin/ ;
           mv ${{ env.REDIS_DIST }}-cygwin ${{ env.REDIS_DIST }}-cygwin-with-Service ;
           zip -q -r ${{ env.REDIS_DIST }}-cygwin-with-Service.zip ${{ env.REDIS_DIST }}-cygwin-with-Service
-        shell: bash
 
       - name: Verify cygwin version
         if: ${{ success() }}
