@@ -70,7 +70,7 @@ jobs:
           cp README.md README.zh_CN.md start.bat /bin/cygcrypto-3.dll /bin/cygwin1.dll /bin/cygssl-3.dll /bin/cygz.dll /bin/cyggcc_s-seh-1.dll /bin/cygstdc++-6.dll /bin/cygiconv-2.dll /bin/cygintl-8.dll ${{ env.VALKEY_DIST }}-cygwin ;
           sed -i 's/pidfile \/var\/run/pidfile ./' ${{ env.VALKEY_DIST }}-cygwin/valkey.conf ;
           zip -q -r ${{ env.VALKEY_DIST }}-cygwin.zip ${{ env.VALKEY_DIST }}-cygwin ;
-          cp install_valkey_service.bat uninstall_valkey_service.bat LICENSE Valkey.wxs publish/* ${{ env.VALKEY_DIST }}-cygwin/ ;
+          cp LICENSE Valkey.wxs publish/* ${{ env.VALKEY_DIST }}-cygwin/ ;
           mv ${{ env.VALKEY_DIST }}-cygwin ${{ env.VALKEY_DIST }}-cygwin-with-Service ;
           zip -q -r ${{ env.VALKEY_DIST }}-cygwin-with-Service.zip ${{ env.VALKEY_DIST }}-cygwin-with-Service
         shell: bash   
