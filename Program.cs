@@ -1,12 +1,12 @@
 using System.Diagnostics;
 
-namespace RedisService
+namespace ValkeyService
 {
     class Program
     {
         static void Main(string[] args)
         {
-            string configFilePath = "redis.conf";
+            string configFilePath = "valkey.conf";
 
             if (args.Length > 1 && args[0] == "-c")
             {
@@ -16,7 +16,7 @@ namespace RedisService
             IHost host = Host.CreateDefaultBuilder().UseWindowsService().ConfigureServices((hostContext, services) =>
             {
                 services.AddHostedService(serviceProvider =>
-                        new RedisService(configFilePath));
+                        new ValkeyService(configFilePath));
             }).Build();
 
             host.Run();
@@ -25,7 +25,7 @@ namespace RedisService
 
 
 
-    public class RedisService(string configFilePath) : BackgroundService
+    public class ValkeyService(string configFilePath) : BackgroundService
     {
 
         private Process? redisProcess = new();
@@ -46,7 +46,7 @@ namespace RedisService
             var diskSymbol = configFilePath[..configFilePath.IndexOf(":")];
             var fileConf = configFilePath.Replace(diskSymbol + ":", "/cygdrive/" + diskSymbol).Replace("\\", "/");
 
-            string fileName = Path.Combine(basePath, "redis-server.exe").Replace("\\", "/");
+            string fileName = Path.Combine(basePath, "valkey-server.exe").Replace("\\", "/");
             string arguments = $"\"{fileConf}\"";
 
             ProcessStartInfo processStartInfo = new(fileName, arguments)
