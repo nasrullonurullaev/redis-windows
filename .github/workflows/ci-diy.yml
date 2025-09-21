@@ -90,7 +90,7 @@ jobs:
           dotnet tool install --global wix
           ls -R ./${{ env.REDIS_DIST }}-cygwin-with-Service
           cd ${{ env.REDIS_DIST }}-cygwin-with-Service
-          wix build valkey.wxs -arch x64 -o ../${{ env.REDIS_DIST }}.msi          
+          wix build Valkey.wxs -arch x64 -o ../${{ env.REDIS_DIST }}.msi          
 
       - name: Calculate the hash value
         if: ${{ success() }}
