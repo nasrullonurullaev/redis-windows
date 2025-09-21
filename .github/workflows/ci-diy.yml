@@ -76,19 +76,15 @@ jobs:
       - name: Verify cygwin version
         if: ${{ success() }}
         run: |
-          $REDIS_CYGWIN_VERSION_INFO=(./${{ env.REDIS_DIST }}-cygwin-with-Service/redis-server.exe --version )
+          ls
+          ls ${{ env.REDIS_DIST }}-cygwin-with-Service
+          $REDIS_CYGWIN_VERSION_INFO = ./${{ env.REDIS_DIST }}-cygwin-with-Service/redis-server.exe --version
           echo $REDIS_CYGWIN_VERSION_INFO
           # If ( -not ( $REDIS_CYGWIN_VERSION_INFO -match "${{ env.RELEASE_VERSION }}" ) ) { 
           #   Write-Output "cygwin verification failed"
           #   exit 1
           # }
 
-      - name: Create installer
-        run: |
-          dotnet tool install --global wix
-          ls -R ./${{ env.REDIS_DIST }}-cygwin-with-Service
-          cd ${{ env.REDIS_DIST }}-cygwin-with-Service
-          wix build Redis.wxs -arch x64 -o ../${{ env.REDIS_DIST }}.msi
 
       - name: Calculate the hash value
         if: ${{ success() }}
