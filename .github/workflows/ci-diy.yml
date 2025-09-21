@@ -71,7 +71,7 @@ jobs:
           cp install_redis_service.bat uninstall_redis_service.bat LICENSE Redis.wxs publish/* ${{ env.REDIS_DIST }}-cygwin/ ;
           mv ${{ env.REDIS_DIST }}-cygwin ${{ env.REDIS_DIST }}-cygwin-with-Service ;
           zip -q -r ${{ env.REDIS_DIST }}-cygwin-with-Service.zip ${{ env.REDIS_DIST }}-cygwin-with-Service
-          shell: bash   
+        shell: bash   
 
       - name: Verify cygwin version
         if: ${{ success() }}
