@@ -52,7 +52,7 @@ jobs:
           workspace=$(pwd) ;
           mkdir ${{ env.REDIS_DIST }}-cygwin ;
           sed -i 's/__GNU_VISIBLE/1/' /usr/include/dlfcn.h ;
-          rm -rf valkey-${{ env.RELEASE_VERSION }} && tar -xzf valkey-${{ env.RELEASE_VERSION }}.tar.gz ;
+          rm -rf redis-${{ env.RELEASE_VERSION }} && tar -xzf redis-${{ env.RELEASE_VERSION }}.tar.gz ;
           echo "=== after extract ===" ;
           ls -la ;
           ls -la valkey-${{ env.RELEASE_VERSION }} || true ;
