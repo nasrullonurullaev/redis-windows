@@ -53,7 +53,11 @@ jobs:
           mkdir ${{ env.REDIS_DIST }}-cygwin ;
           sed -i 's/__GNU_VISIBLE/1/' /usr/include/dlfcn.h ;
           rm -rf redis-${{ env.RELEASE_VERSION }} && tar -xzf redis-${{ env.RELEASE_VERSION }}.tar.gz ;
-          cd redis-${{ env.RELEASE_VERSION }}/src && ./mkreleasehdr.sh ;
+          echo "=== after extract ===" ;
+          ls -la ;
+          ls -la redis-${{ env.RELEASE_VERSION }} || true ;
+          cd redis-${{ env.RELEASE_VERSION }}/src && pwd && ls -la ;
+          ./mkreleasehdr.sh ;
           sed -i 's/\"\;/\"/' asciilogo.h ;
           echo '" Redis for Windows Project Home \n"' >> asciilogo.h ;
           echo '" https://github.com/redis-windows/redis-windows  \n\n";' >> asciilogo.h ;
