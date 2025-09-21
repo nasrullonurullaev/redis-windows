@@ -1,8 +1,8 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <Wix xmlns="http://wixtoolset.org/schemas/v4/wxs">
-  <Package Name="Redis-Windows"
+  <Package Name="Valkey-Windows"
            Manufacturer="Ascensio System SIA"
-           Version="7.4.0"
+           Version="8.0.5"
            UpgradeCode="05410198-7212-4FC4-B7C8-AFEFC3DA0FBC"
            Compressed="true"
            InstallerVersion="200">
@@ -14,15 +14,15 @@
             <Directory Id="INSTALLFOLDER" Name="!(bind.Property.ProductName)" />
           </StandardDirectory>
 
-    <ComponentGroup Id="RedisServiceComponents" Directory="INSTALLFOLDER">
+    <ComponentGroup Id="ValkeyServiceComponents" Directory="INSTALLFOLDER">
       <Component Id="ServiceExecutable">
-        <File Source="RedisService.exe" />
+        <File Source="ValkeyService.exe" />
 
         <ServiceInstall Id="ServiceInstaller"
                         Type="ownProcess"
-                        Name="Redis"
-                        DisplayName="Redis"
-                        Description="Redis"
+                        Name="Valkey"
+                        DisplayName="Valkey"
+                        Description="Valkey"
                         Start="auto"
                         ErrorControl="normal" />
 
@@ -30,26 +30,26 @@
                         Start="install"
                         Stop="both"
                         Remove="uninstall"
-                        Name="Redis"
+                        Name="Valkey"
                         Wait="true" />
       </Component>
     </ComponentGroup>
-         <ComponentGroup Id="RedisComponents" Directory="INSTALLFOLDER">
+         <ComponentGroup Id="ValkeyComponents" Directory="INSTALLFOLDER">
                 <Files Include="*.dll" />
                 <Files Include="*.conf" />
                 <Files Include="*.md" />
-                <File Source="redis-benchmark.exe" />
-                <File Source="redis-check-aof.exe" />
-                <File Source="redis-check-rdb.exe" />
-                <File Source="redis-cli.exe" />
-                <File Source="redis-sentinel.exe" />
-                <File Source="redis-server.exe" />
+                <File Source="valkey-benchmark.exe" />
+                <File Source="valkey-check-aof.exe" />
+                <File Source="valkey-check-rdb.exe" />
+                <File Source="valkey-cli.exe" />
+                <File Source="valkey-sentinel.exe" />
+                <File Source="valkey-server.exe" />
                 <File Source="LICENSE" />
          </ComponentGroup>
 
-    <Feature Id="Redis">
-      <ComponentGroupRef Id="RedisServiceComponents"/>
-      <ComponentGroupRef Id="RedisComponents"/>
+    <Feature Id="Valkey">
+      <ComponentGroupRef Id="ValkeyServiceComponents"/>
+      <ComponentGroupRef Id="ValkeyComponents"/>
     </Feature>
   </Package>
 </Wix>
